@@ -17,6 +17,7 @@ export default function PasswordForgotten() {
   const [password2, setPassword2] = useState('');
   const [passwordsEqual, setPasswordsEqual] = useState(true);
   const [isValidPassword, setIsValidPassword] = useState(true);
+  const [changePasswordError, setChangePasswordError] = useState('');
   const navigate = useNavigate();
 
   async function sendEmail(event) {
@@ -70,6 +71,7 @@ export default function PasswordForgotten() {
     setInsertedCode('');
     setPassword1('');
     setPassword2('');
+    setChangePasswordError('');
   }
 
   function startChangePassword(event) {
@@ -82,8 +84,9 @@ export default function PasswordForgotten() {
     }
   }
 
-  function changePassword(event) {
+  async function changePassword(event) {
     event.preventDefault();
+    setChangePasswordError('');
     if (password1 === password2) {
       setPasswordsEqual(true);
       if (password1.length < 8) {
@@ -91,13 +94,25 @@ export default function PasswordForgotten() {
         return;
       }
       setIsValidPassword(true);
-      fetch(`${consts.getBackendUrl()}/api/users/change-password`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({email, password: password1}),
-      })
-        .then(res => res.json())
-        .then(() => navigate('/login'));
+      try {
+        const res = await fetch(`${consts.getBackendUrl()}/api/users/change-password`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email: email.trim(), password: password1}),
+        });
+
+        const body = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(body.message || body.error || 'Unable to change password.');
+        }
+
+        navigate('/login');
+      } catch (error) {
+        setChangePasswordError(
+          error?.message || 'Unable to change password. Please try again.'
+        );
+      }
     } else {
       setPasswordsEqual(false);
     }
@@ -152,6 +167,9 @@ export default function PasswordForgotten() {
                   <p className="error-message text-danger">
                     Password must be at least 8 characters long.
                   </p>
+                )}
+                {changePasswordError && (
+                  <p className="error-message text-danger">{changePasswordError}</p>
                 )}
                 <Button
                   className="w-100 mt-2 styled-btn"
