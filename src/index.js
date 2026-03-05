@@ -43,8 +43,16 @@ const router = createBrowserRouter([
             element: <AddBook />,
           },
           {
+            path: 'add-book/:id',
+            element: <AddBook />,
+          },
+          {
             path: 'books-list',
             element: <BooksList />,
+          },
+          {
+            path: 'book/:id/edit',
+            element: <AddBook />,
           },
           {
             path: 'book/:id',

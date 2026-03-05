@@ -20,6 +20,30 @@
   text-align: center;
 }
 
+.book-details-actions {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.book-details-edit-btn {
+  width: 100%;
+  max-width: 360px;
+  padding: 0.3rem 0;
+  font-size: 1.5em;
+  border-radius: 10px;
+  transition:
+    background-color 0.3s,
+    transform 0.3s;
+  background: linear-gradient(to right, #b79891, #94716b) !important;
+  border: 1.5px solid black !important;
+  color: white !important;
+}
+
+.book-details-edit-btn:hover {
+  transform: scale(1.05);
+}
+
 .your-reading-status {
   font-size: 25px;
 }
@@ -30,6 +54,13 @@
   }
   .your-reading-status {
     font-size: 22px;
+  }
+  .book-details-edit-btn {
+    font-size: 1.2em;
+    padding: 0.45rem 0;
+  }
+  .book-details-edit-btn:hover {
+    transform: none;
   }
   .book-details-data-container {
     border-top-left-radius: 0;

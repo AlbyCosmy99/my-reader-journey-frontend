@@ -1,8 +1,12 @@
 import Card from 'react-bootstrap/Card';
+import Button from 'react-bootstrap/Button';
+import {useNavigate} from 'react-router-dom';
 import './BookDetailsData.css';
 import formatDate from '../../../../../utils/formatDate';
 
 export default function BookDetailsData({book}) {
+  const navigate = useNavigate();
+
   return (
     <Card
       style={{
@@ -15,6 +19,14 @@ export default function BookDetailsData({book}) {
         <div className="book-details-main-data">
           <h2>{book.title}</h2>
           <h3>{book.author}</h3>
+        </div>
+        <div className="book-details-actions">
+          <Button
+            className="book-details-edit-btn"
+            onClick={() => navigate(`/home/book/${book._id}/edit`)}
+          >
+            EDIT BOOK
+          </Button>
         </div>
         {book.genre ? (
           <h4>

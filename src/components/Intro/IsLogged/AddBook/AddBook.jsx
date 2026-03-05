@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {
   Card,
   Form,
@@ -9,9 +9,9 @@ import {
   Spinner,
 } from 'react-bootstrap';
 import './AddBook.css';
-import {jwtDecode} from 'jwt-decode';
 import consts from '../../../../consts';
 import defaultCover from '../../../../assets/defaultCover.jpg';
+import {useParams} from 'react-router-dom';
 
 // Utility: get local datetime string (YYYY-MM-DDTHH:MM:SS)
 const getNowDatetimeLocal = () => {
@@ -31,7 +31,17 @@ const addCurrentTime = dateStr => {
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 };
 
+const toLocalDatetime = value => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 19);
+};
+
 export default function AddBook() {
+  const {id: editBookId} = useParams();
+  const isEditMode = Boolean(editBookId);
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [genre, setGenre] = useState('');
@@ -56,29 +66,64 @@ export default function AddBook() {
   const [imageUrl, setImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!isEditMode) return;
+
+    setLoading(true);
+    fetch(`${consts.getBackendUrl()}/api/users/books/${editBookId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        authorization: `Bearer ${localStorage.getItem('jwt')}`,
+      },
+    })
+      .then(res => res.json())
+      .then(res => {
+        const existingBook = res?.book?.[0];
+        if (!existingBook) {
+          setLoading(false);
+          window.history.back();
+          return;
+        }
+
+        setTitle(existingBook.title || '');
+        setAuthor(existingBook.author || '');
+        setGenre(existingBook.genre || '');
+        setLanguage(existingBook.language || '');
+        setPublishingHouse(existingBook.publishing_house || '');
+        setPages(existingBook.pages ?? '');
+        setPrice(existingBook.price || '');
+        setIsbn(existingBook.isbn || '');
+        setPublicationDate(toLocalDatetime(existingBook.publicationDate));
+        setRead(Boolean(existingBook.read));
+        setToRead(Boolean(existingBook.toRead));
+        setReading(Boolean(existingBook.reading));
+        setRating(existingBook.rating ?? null);
+        setFavorite(Boolean(existingBook.favorite));
+        setLoaned(Boolean(existingBook.loaned));
+        setBorrowed(Boolean(existingBook.borrowed));
+        setReadingStartDate(toLocalDatetime(existingBook.startReadingDate));
+        setReadingEndDate(toLocalDatetime(existingBook.endReadingDate));
+        setDateAdded(toLocalDatetime(existingBook.dateAdded));
+        setDescription(existingBook.description || '');
+        setNotes(existingBook.notes || '');
+        setImageUrl(existingBook.imageUrl || '');
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [editBookId, isEditMode]);
+
   function addBook(event) {
     event.preventDefault();
     setLoading(true);
 
     const token = localStorage.getItem('jwt');
-    let payload = null;
-
-    if (token) {
-      try {
-        payload = jwtDecode(token);
-      } catch (error) {
-        console.error('Invalid token', error);
-        localStorage.removeItem('jwt');
-        window.location.reload();
-        return;
-      }
+    if (!token) {
+      setLoading(false);
+      return;
     }
 
-    const userId = payload?.id;
-    if (!userId) return;
-
     const book = {
-      userId,
       title,
       author,
       genre,
@@ -103,15 +148,32 @@ export default function AddBook() {
       rating,
     };
 
-    fetch(`${consts.getBackendUrl()}/api/users/books`, {
-      method: 'POST',
+    const requestUrl = isEditMode
+      ? `${consts.getBackendUrl()}/api/users/books/${editBookId}`
+      : `${consts.getBackendUrl()}/api/users/books`;
+    const requestMethod = isEditMode ? 'PUT' : 'POST';
+
+    fetch(requestUrl, {
+      method: requestMethod,
       body: JSON.stringify(book),
       headers: {
         'Content-Type': 'application/json',
         authorization: `Bearer ${token}`,
       },
     })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          return res
+            .json()
+            .catch(() => ({}))
+            .then(body =>
+              Promise.reject(
+                new Error(body.error || body.message || 'Unable to save book.'),
+              ),
+            );
+        }
+        return res.json().catch(() => ({}));
+      })
       .then(() => {
         setLoading(false);
         window.history.back();
