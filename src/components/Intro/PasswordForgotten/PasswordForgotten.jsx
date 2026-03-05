@@ -27,6 +27,13 @@ export default function PasswordForgotten() {
     setCode('');
     setEmailSent(false);
     setIsSendingEmail(true);
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      setRequestError('Valid email is required.');
+      setIsSendingEmail(false);
+      return;
+    }
 
     try {
       const res = await fetch(
@@ -34,7 +41,7 @@ export default function PasswordForgotten() {
         {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({email}),
+          body: JSON.stringify({email: normalizedEmail}),
         }
       );
 
@@ -49,6 +56,7 @@ export default function PasswordForgotten() {
 
       setCode(Number(body.code));
       setEmailSent(true);
+      setEmail(normalizedEmail);
     } catch (error) {
       console.error('send-verification failed:', error);
       setRequestError(
@@ -98,7 +106,7 @@ export default function PasswordForgotten() {
         const res = await fetch(`${consts.getBackendUrl()}/api/users/change-password`, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({email: email.trim(), password: password1}),
+          body: JSON.stringify({email: email.trim().toLowerCase(), password: password1}),
         });
 
         const body = await res.json().catch(() => ({}));
