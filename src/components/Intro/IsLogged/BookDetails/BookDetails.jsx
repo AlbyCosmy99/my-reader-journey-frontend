@@ -26,7 +26,7 @@ export default function BookDetails() {
         setBook(res['book'][0]);
         setLoading(false);
       });
-  }, []);
+  }, [id]);
 
   return loading ? (
     <div

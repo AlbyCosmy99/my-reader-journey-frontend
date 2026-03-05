@@ -1,6 +1,6 @@
 import './BooksList.css';
 import {useNavigate, useSearchParams} from 'react-router-dom';
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import consts from '../../../../consts';
 import {Col, Container, Dropdown, Row, Spinner} from 'react-bootstrap';
 import AddNewBookButton from '../../../Buttons/AddNewBookButton/AddNewBookButton';
@@ -29,7 +29,7 @@ export default function BooksList() {
     dateAdded: 'Recently Added to Library',
   };
 
-  function fetchBooks() {
+  const fetchBooks = useCallback(() => {
     setLoading(true);
     fetch(
       `${consts.getBackendUrl()}/api/users/books?filter=${message}&sortBy=${localStorage.getItem(
@@ -46,10 +46,9 @@ export default function BooksList() {
       .then(res => res.json())
       .then(res => {
         setBooks(res.books);
-        console.log(res);
         setLoading(false);
       });
-  }
+  }, [message]);
 
   useEffect(() => {
     if (!message && !sectionTitle) {
@@ -57,7 +56,7 @@ export default function BooksList() {
       return;
     }
     fetchBooks();
-  }, [message, sectionTitle]);
+  }, [fetchBooks, message, navigate, sectionTitle]);
 
   function handleSelect(selection) {
     localStorage.setItem('sortBy', selection);

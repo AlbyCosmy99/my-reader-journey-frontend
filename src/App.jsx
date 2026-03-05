@@ -28,7 +28,7 @@ function App() {
       localStorage.removeItem('jwt');
       navigate('/login');
     }
-  }, []);
+  }, [navigate]);
 
   return (
     <div id="app-container" style={{backgroundColor: '#9A7872'}}>

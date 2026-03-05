@@ -1,8 +1,8 @@
-import React, {useState} from 'react';
+import {useState} from 'react';
 import {Card, Form, Button, Container} from 'react-bootstrap';
 import consts from '../../../consts';
-import {Link, useNavigate} from 'react-router-dom';
-import './Register.css'; // ✅ Include CSS for styled-btn, styled-link
+import {Link} from 'react-router-dom';
+import './Register.css';
 
 export default function Register() {
   const [isValidPassword, setIsValidPassword] = useState(true);
@@ -13,7 +13,6 @@ export default function Register() {
   const [password2, setPassword2] = useState('');
   const [passwordsEqual, setPasswordsEqual] = useState(true);
   const [allFieldsMessage, setAllFieldsMessage] = useState(false);
-  const navigate = useNavigate();
 
   function register(event) {
     event.preventDefault();
