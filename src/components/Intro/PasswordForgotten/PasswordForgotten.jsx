@@ -40,7 +40,10 @@ export default function PasswordForgotten() {
       const body = await res.json().catch(() => ({}));
 
       if (!res.ok || !body.code) {
-        throw new Error(body.error || 'Failed to send verification email.');
+        const backendMessage = body.details
+          ? `${body.error} ${body.details}`
+          : body.error;
+        throw new Error(backendMessage || 'Failed to send verification email.');
       }
 
       setCode(Number(body.code));
@@ -48,7 +51,8 @@ export default function PasswordForgotten() {
     } catch (error) {
       console.error('send-verification failed:', error);
       setRequestError(
-        'Could not send reset email. Please try again in a few minutes.'
+        error?.message ||
+          'Could not send reset email. Please try again in a few minutes.'
       );
     } finally {
       setIsSendingEmail(false);
