@@ -117,9 +117,16 @@ export default function PasswordForgotten() {
 
         navigate('/login');
       } catch (error) {
-        setChangePasswordError(
-          error?.message || 'Unable to change password. Please try again.'
-        );
+        const message = error?.message || '';
+        if (/user not found/i.test(message)) {
+          setChangePasswordError(
+            "Email non registrata su questo ambiente. Usa l'email corretta o registrati prima."
+          );
+        } else {
+          setChangePasswordError(
+            message || 'Unable to change password. Please try again.'
+          );
+        }
       }
     } else {
       setPasswordsEqual(false);
