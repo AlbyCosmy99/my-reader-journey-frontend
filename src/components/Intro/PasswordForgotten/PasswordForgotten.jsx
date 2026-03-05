@@ -2,30 +2,32 @@ import {useState} from 'react';
 import {Card, Form, Button, Container} from 'react-bootstrap';
 import consts from '../../../consts';
 import {useNavigate} from 'react-router-dom';
-import './PasswordForgotten.css'; // 👈 Make sure to import the styles
+import './PasswordForgotten.css';
 
 export default function PasswordForgotten() {
   const [email, setEmail] = useState('');
   const [emailSent, setEmailSent] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [requestError, setRequestError] = useState('');
-  const [code, setCode] = useState('');
-  const [insertedCode, setInsertedCode] = useState('');
-  const [incorrectCode, setIncorrectCode] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationError, setVerificationError] = useState('');
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [resetToken, setResetToken] = useState('');
   const [isChangePassword, setIsChangePassword] = useState(false);
   const [password1, setPassword1] = useState('');
   const [password2, setPassword2] = useState('');
   const [passwordsEqual, setPasswordsEqual] = useState(true);
   const [isValidPassword, setIsValidPassword] = useState(true);
   const [changePasswordError, setChangePasswordError] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const navigate = useNavigate();
 
   async function sendEmail(event) {
     event.preventDefault();
     setRequestError('');
-    setIncorrectCode(false);
-    setCode('');
-    setEmailSent(false);
+    setVerificationError('');
+    setIsChangePassword(false);
+    setResetToken('');
     setIsSendingEmail(true);
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -37,31 +39,30 @@ export default function PasswordForgotten() {
 
     try {
       const res = await fetch(
-        `${consts.getBackendUrl()}/api/users/mails/send-verification`,
+        `${consts.getBackendUrl()}/api/users/password-reset/request`,
         {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({email: normalizedEmail}),
-        }
+        },
       );
 
       const body = await res.json().catch(() => ({}));
 
-      if (!res.ok || !body.code) {
-        const backendMessage = body.details
-          ? `${body.error} ${body.details}`
-          : body.error;
-        throw new Error(backendMessage || 'Failed to send verification email.');
+      if (!res.ok) {
+        throw new Error(
+          body.details ? `${body.error} ${body.details}` : body.error,
+        );
       }
 
-      setCode(Number(body.code));
-      setEmailSent(true);
       setEmail(normalizedEmail);
+      setEmailSent(true);
+      setVerificationCode('');
     } catch (error) {
-      console.error('send-verification failed:', error);
+      console.error('password-reset/request failed:', error);
       setRequestError(
         error?.message ||
-          'Could not send reset email. Please try again in a few minutes.'
+          'Could not send reset email. Please try again in a few minutes.',
       );
     } finally {
       setIsSendingEmail(false);
@@ -72,64 +73,104 @@ export default function PasswordForgotten() {
     event.preventDefault();
     setEmailSent(false);
     setRequestError('');
+    setVerificationError('');
     setIsSendingEmail(false);
-    setIncorrectCode(false);
+    setIsVerifyingCode(false);
     setIsChangePassword(false);
-    setCode('');
-    setInsertedCode('');
+    setResetToken('');
+    setVerificationCode('');
     setPassword1('');
     setPassword2('');
+    setPasswordsEqual(true);
+    setIsValidPassword(true);
     setChangePasswordError('');
   }
 
-  function startChangePassword(event) {
+  async function startChangePassword(event) {
     event.preventDefault();
-    if (code !== 0 && insertedCode !== 0 && code === Number(insertedCode)) {
+    setVerificationError('');
+    setIsVerifyingCode(true);
+
+    try {
+      const res = await fetch(
+        `${consts.getBackendUrl()}/api/users/password-reset/verify`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            email: email.trim().toLowerCase(),
+            code: verificationCode.trim(),
+          }),
+        },
+      );
+
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok || !body.resetToken) {
+        throw new Error(body.error || 'Invalid or expired verification code.');
+      }
+
+      setResetToken(body.resetToken);
       setIsChangePassword(true);
-    } else {
+    } catch (error) {
       setIsChangePassword(false);
-      setIncorrectCode(true);
+      setVerificationError(
+        error?.message || 'Invalid or expired verification code.',
+      );
+    } finally {
+      setIsVerifyingCode(false);
     }
   }
 
   async function changePassword(event) {
     event.preventDefault();
     setChangePasswordError('');
-    if (password1 === password2) {
-      setPasswordsEqual(true);
-      if (password1.length < 8) {
-        setIsValidPassword(false);
-        return;
-      }
-      setIsValidPassword(true);
-      try {
-        const res = await fetch(`${consts.getBackendUrl()}/api/users/change-password`, {
+
+    if (password1 !== password2) {
+      setPasswordsEqual(false);
+      return;
+    }
+
+    setPasswordsEqual(true);
+
+    if (password1.length < 8) {
+      setIsValidPassword(false);
+      return;
+    }
+
+    setIsValidPassword(true);
+    setIsChangingPassword(true);
+
+    try {
+      const res = await fetch(
+        `${consts.getBackendUrl()}/api/users/password-reset/confirm`,
+        {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({email: email.trim().toLowerCase(), password: password1}),
-        });
+          body: JSON.stringify({
+            email: email.trim().toLowerCase(),
+            resetToken,
+            password: password1,
+          }),
+        },
+      );
 
-        const body = await res.json().catch(() => ({}));
+      const body = await res.json().catch(() => ({}));
 
-        if (!res.ok) {
-          throw new Error(body.message || body.error || 'Unable to change password.');
-        }
-
-        navigate('/login');
-      } catch (error) {
-        const message = error?.message || '';
-        if (/user not found/i.test(message)) {
-          setChangePasswordError(
-            "Email non registrata su questo ambiente. Usa l'email corretta o registrati prima."
-          );
-        } else {
-          setChangePasswordError(
-            message || 'Unable to change password. Please try again.'
-          );
-        }
+      if (!res.ok) {
+        throw new Error(
+          body.message || body.error || 'Unable to change password.',
+        );
       }
-    } else {
-      setPasswordsEqual(false);
+
+      navigate('/login');
+    } catch (error) {
+      const message = error?.message || '';
+      setChangePasswordError(
+        message || 'Unable to change password. Please try again.',
+      );
+    } finally {
+      setIsChangingPassword(false);
     }
   }
 
@@ -170,8 +211,9 @@ export default function PasswordForgotten() {
                 <Button
                   className="w-100 mb-3 styled-btn"
                   onClick={changePassword}
+                  disabled={isChangingPassword}
                 >
-                  Set New Password
+                  {isChangingPassword ? 'Updating...' : 'Set New Password'}
                 </Button>
                 {!passwordsEqual && (
                   <p className="error-message text-danger">
@@ -184,7 +226,9 @@ export default function PasswordForgotten() {
                   </p>
                 )}
                 {changePasswordError && (
-                  <p className="error-message text-danger">{changePasswordError}</p>
+                  <p className="error-message text-danger">
+                    {changePasswordError}
+                  </p>
                 )}
                 <Button
                   className="w-100 mt-2 styled-btn"
@@ -203,8 +247,8 @@ export default function PasswordForgotten() {
                     className="mb-3"
                     type="text"
                     required
-                    value={insertedCode}
-                    onChange={e => setInsertedCode(e.target.value)}
+                    value={verificationCode}
+                    onChange={e => setVerificationCode(e.target.value)}
                   />
                 </Form.Group>
                 <p className="text-info small">
@@ -213,11 +257,14 @@ export default function PasswordForgotten() {
                 <Button
                   className="w-100 mb-3 styled-btn"
                   onClick={startChangePassword}
+                  disabled={isVerifyingCode}
                 >
-                  Verify Code
+                  {isVerifyingCode ? 'Verifying...' : 'Verify Code'}
                 </Button>
-                {incorrectCode && (
-                  <p className="error-message text-danger">Incorrect code.</p>
+                {verificationError && (
+                  <p className="error-message text-danger">
+                    {verificationError}
+                  </p>
                 )}
                 <Button
                   className="w-100 mt-2 styled-btn"
@@ -250,7 +297,7 @@ export default function PasswordForgotten() {
                     type="submit"
                     disabled={isSendingEmail}
                   >
-                    {isSendingEmail ? 'Sending...' : 'Send Reset Link'}
+                    {isSendingEmail ? 'Sending...' : 'Send Reset Code'}
                   </Button>
                   {requestError && (
                     <p className="error-message text-danger">{requestError}</p>
