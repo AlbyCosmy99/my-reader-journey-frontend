@@ -7,6 +7,8 @@ import './PasswordForgotten.css'; // 👈 Make sure to import the styles
 export default function PasswordForgotten() {
   const [email, setEmail] = useState('');
   const [emailSent, setEmailSent] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [requestError, setRequestError] = useState('');
   const [code, setCode] = useState('');
   const [insertedCode, setInsertedCode] = useState('');
   const [incorrectCode, setIncorrectCode] = useState(false);
@@ -17,28 +19,47 @@ export default function PasswordForgotten() {
   const [isValidPassword, setIsValidPassword] = useState(true);
   const navigate = useNavigate();
 
-  function sendEmail(event) {
+  async function sendEmail(event) {
     event.preventDefault();
-    setEmailSent(true);
-    fetch(`${consts.getBackendUrl()}/api/users/mails/send-verification`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({email}),
-    })
-      .then(res => res.json())
-      .then(res => {
-        if (res.code) {
-          setCode(res.code);
-        } else {
-          setEmailSent(false);
-          setEmail('');
+    setRequestError('');
+    setIncorrectCode(false);
+    setCode('');
+    setEmailSent(false);
+    setIsSendingEmail(true);
+
+    try {
+      const res = await fetch(
+        `${consts.getBackendUrl()}/api/users/mails/send-verification`,
+        {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email}),
         }
-      });
+      );
+
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok || !body.code) {
+        throw new Error(body.error || 'Failed to send verification email.');
+      }
+
+      setCode(Number(body.code));
+      setEmailSent(true);
+    } catch (error) {
+      console.error('send-verification failed:', error);
+      setRequestError(
+        'Could not send reset email. Please try again in a few minutes.'
+      );
+    } finally {
+      setIsSendingEmail(false);
+    }
   }
 
   function handleResendMail(event) {
     event.preventDefault();
     setEmailSent(false);
+    setRequestError('');
+    setIsSendingEmail(false);
     setIncorrectCode(false);
     setIsChangePassword(false);
     setCode('');
@@ -187,9 +208,16 @@ export default function PasswordForgotten() {
                       onChange={e => setEmail(e.target.value)}
                     />
                   </Form.Group>
-                  <Button className="w-100 mb-3 styled-btn" type="submit">
-                    Send Reset Link
+                  <Button
+                    className="w-100 mb-3 styled-btn"
+                    type="submit"
+                    disabled={isSendingEmail}
+                  >
+                    {isSendingEmail ? 'Sending...' : 'Send Reset Link'}
                   </Button>
+                  {requestError && (
+                    <p className="error-message text-danger">{requestError}</p>
+                  )}
                   <Button
                     className="w-100 styled-btn"
                     onClick={() => navigate('/login')}
