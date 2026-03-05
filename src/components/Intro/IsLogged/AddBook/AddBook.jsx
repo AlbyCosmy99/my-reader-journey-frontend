@@ -50,8 +50,9 @@ export default function AddBook() {
   const [publishingHouse, setPublishingHouse] = useState('');
   const [pages, setPages] = useState(0);
   const [price, setPrice] = useState('');
+  const [currency, setCurrency] = useState('EUR');
   const [isbn, setIsbn] = useState('');
-  const [publicationDate, setPublicationDate] = useState('');
+  const [publicationYear, setPublicationYear] = useState('');
   const [read, setRead] = useState(true);
   const [toRead, setToRead] = useState(false);
   const [reading, setReading] = useState(false);
@@ -94,8 +95,16 @@ export default function AddBook() {
         setPublishingHouse(existingBook.publishing_house || '');
         setPages(existingBook.pages ?? '');
         setPrice(existingBook.price || '');
+        setCurrency(existingBook.currency || 'EUR');
         setIsbn(existingBook.isbn || '');
-        setPublicationDate(toLocalDatetime(existingBook.publicationDate));
+        const legacyPublicationDate = existingBook.publicationDate
+          ? new Date(existingBook.publicationDate)
+          : null;
+        const legacyPublicationYear =
+          legacyPublicationDate && !Number.isNaN(legacyPublicationDate.getTime())
+            ? legacyPublicationDate.getFullYear()
+            : '';
+        setPublicationYear(existingBook.publicationYear ?? legacyPublicationYear);
         setRead(Boolean(existingBook.read));
         setToRead(Boolean(existingBook.toRead));
         setReading(Boolean(existingBook.reading));
@@ -132,8 +141,9 @@ export default function AddBook() {
       publishing_house: publishingHouse,
       pages,
       price,
+      currency,
       isbn,
-      publicationDate,
+      publicationYear: publicationYear === '' ? null : Number(publicationYear),
       read,
       toRead,
       reading,
@@ -248,12 +258,6 @@ export default function AddBook() {
                 },
                 {label: 'Price', val: price, setter: setPrice},
                 {label: 'ISBN', val: isbn, setter: setIsbn},
-                {
-                  label: 'Publication Date',
-                  val: publicationDate,
-                  setter: setPublicationDate,
-                  type: 'date',
-                },
               ].map((field, i) => (
                 <Col md={6} key={i}>
                   <Form.Group>
@@ -268,6 +272,32 @@ export default function AddBook() {
                   </Form.Group>
                 </Col>
               ))}
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="text-dark">Currency</Form.Label>
+                  <Form.Select
+                    value={currency}
+                    onChange={e => setCurrency(e.target.value)}
+                    className="bg-light"
+                  >
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="text-dark">Publication Year</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    max={new Date().getFullYear() + 1}
+                    value={publicationYear}
+                    onChange={e => setPublicationYear(e.target.value)}
+                    className="bg-light"
+                  />
+                </Form.Group>
+              </Col>
 
               <Col md={12}>
                 <Form.Group>

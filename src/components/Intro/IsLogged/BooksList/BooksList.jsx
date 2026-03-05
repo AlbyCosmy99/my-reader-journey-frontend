@@ -24,7 +24,8 @@ export default function BooksList() {
     pages: 'Number of Pages',
     rating: 'Highest Rating',
     endReadingDate: 'Finished On',
-    publicationDate: 'Publication Date',
+    publicationYear: 'Publication Year',
+    publicationDate: 'Publication Year',
     dateAdded: 'Recently Added to Library',
   };
 
@@ -172,10 +173,10 @@ export default function BooksList() {
                           {sortMapping['endReadingDate']}
                         </Dropdown.Item>
                         <Dropdown.Item
-                          eventKey="publicationDate"
-                          onClick={() => handleSelect('-publicationDate')}
+                          eventKey="publicationYear"
+                          onClick={() => handleSelect('-publicationYear')}
                         >
-                          {sortMapping['publicationDate']}
+                          {sortMapping['publicationYear']}
                         </Dropdown.Item>
                         <Dropdown.Item
                           eventKey="dateAdded"

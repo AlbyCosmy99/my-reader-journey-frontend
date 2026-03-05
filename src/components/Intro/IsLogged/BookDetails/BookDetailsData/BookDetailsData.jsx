@@ -6,6 +6,11 @@ import formatDate from '../../../../../utils/formatDate';
 
 export default function BookDetailsData({book}) {
   const navigate = useNavigate();
+  const resolvedPublicationYear =
+    book.publicationYear ??
+    (book.publicationDate ? new Date(book.publicationDate).getFullYear() : null);
+  const resolvedCurrency = book.currency || 'EUR';
+  const currencySymbol = resolvedCurrency === 'USD' ? '$' : '€';
 
   return (
     <Card
@@ -63,7 +68,7 @@ export default function BookDetailsData({book}) {
         {book.price ? (
           <h4>
             <b>Price: </b>
-            {book.price}
+            {book.price} {currencySymbol}
           </h4>
         ) : (
           ''
@@ -76,12 +81,10 @@ export default function BookDetailsData({book}) {
         ) : (
           ''
         )}
-        {book.publicationDate ? (
+        {resolvedPublicationYear ? (
           <h4>
-            <b>Publication Date: </b>
-            {String(book.publicationDate).split('T')[0] === 'null'
-              ? ''
-              : String(book.publicationDate).split('T')[0]}
+            <b>Publication Year: </b>
+            {resolvedPublicationYear}
           </h4>
         ) : (
           ''
