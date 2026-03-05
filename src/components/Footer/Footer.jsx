@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="app-footer">
       <div className="footer-content">
         <p className="footer-line">
-          &copy; {new Date().getFullYear()} <strong>MyReaderJourney</strong>.
+          &copy; 2024 <strong>MyReaderJourney</strong>.
           All rights reserved.
         </p>
 
