@@ -11,7 +11,10 @@
     margin: 0.5rem;
   }
   .book-details-main-data-mobile {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
   .book-title-main-data-mobile {
     line-break: anywhere;

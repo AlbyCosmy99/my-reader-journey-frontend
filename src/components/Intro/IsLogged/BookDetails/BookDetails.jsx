@@ -65,10 +65,6 @@ export default function BookDetails() {
             <div
               style={{
                 flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
                 marginRight: '1rem',
               }}
               className="book-details-main-data-mobile"
