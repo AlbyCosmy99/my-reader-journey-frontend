@@ -18,7 +18,7 @@ const consts = {
       process.env.REACT_APP_BACKEND_URL ||
       (isLocalHost
         ? 'http://localhost:3030'
-        : 'https://my-reader-journey-backend-1.onrender.com')
+        : 'https://my-reader-journey-backend-production.up.railway.app')
     );
   },
 };
