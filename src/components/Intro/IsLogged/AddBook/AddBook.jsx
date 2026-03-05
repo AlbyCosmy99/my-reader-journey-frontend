@@ -11,7 +11,7 @@ import {
 import './AddBook.css';
 import consts from '../../../../consts';
 import defaultCover from '../../../../assets/defaultCover.jpg';
-import {useParams} from 'react-router-dom';
+import {useNavigate, useParams} from 'react-router-dom';
 
 // Utility: get local datetime string (YYYY-MM-DDTHH:MM:SS)
 const getNowDatetimeLocal = () => {
@@ -41,6 +41,7 @@ const toLocalDatetime = value => {
 
 export default function AddBook() {
   const {id: editBookId} = useParams();
+  const navigate = useNavigate();
   const isEditMode = Boolean(editBookId);
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
@@ -176,6 +177,10 @@ export default function AddBook() {
       })
       .then(() => {
         setLoading(false);
+        if (isEditMode) {
+          navigate(`/home/book/${editBookId}`);
+          return;
+        }
         window.history.back();
       })
       .catch(() => setLoading(false));
@@ -209,7 +214,7 @@ export default function AddBook() {
             fontWeight: 'bold',
           }}
         >
-          Add a New Book
+          {isEditMode ? 'Update Book' : 'Add a New Book'}
         </Card.Header>
 
         <Card.Body
@@ -377,7 +382,7 @@ export default function AddBook() {
                     fontWeight: 'bold',
                   }}
                 >
-                  Add Book
+                  {isEditMode ? 'Update Book' : 'Add Book'}
                 </Button>
               </Col>
             </Row>
